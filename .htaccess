@@ -1,0 +1,7 @@
+# Hotel Management System - Clean URLs
+RewriteEngine On
+
+# Redirect old paths to new module structure
+RewriteRule ^booking_form.php$ modules/guest/booking/booking_form.php [R=301,L]
+RewriteRule ^menu.php$ modules/guest/menu/menu.php [R=301,L]
+RewriteRule ^order_cart.php$ modules/guest/menu/order_cart.php [R=301,L]
