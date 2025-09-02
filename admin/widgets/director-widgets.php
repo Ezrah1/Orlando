@@ -157,7 +157,7 @@ function renderPerformanceDashboardWidget($dashboard_manager) {
                     <div class="performance-data">
                         <div class="performance-value"><?= $stats['revenue']['today_bookings'] ?? 0 ?></div>
                         <div class="performance-label">Today's Bookings</div>
-                        <div class="performance-detail">Confirmed reservations</div>
+                        <div class="performance-detail">Confirmed bookings</div>
                     </div>
                 </div>
                 

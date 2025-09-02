@@ -405,8 +405,8 @@ $revenue_today = mysqli_fetch_assoc($todays_revenue)['revenue'] ?? 0;
                             </a>
                         </div>
                         <div class="col-md-3 mb-3">
-                            <a href="reservation.php" class="btn btn-outline-success w-100">
-                                <i class="fas fa-calendar-plus me-1"></i> Reservations
+                            <a href="booking.php" class="btn btn-outline-success w-100">
+                                <i class="fas fa-calendar-plus me-1"></i> Bookings
                             </a>
                         </div>
                         <div class="col-md-3 mb-3">

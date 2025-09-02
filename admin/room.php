@@ -399,7 +399,7 @@ function activateRoom(roomId) {
 
 function viewBookings(roomName) {
     // Redirect to bookings page with room filter
-    window.open('reservation.php?room=' + encodeURIComponent(roomName), '_blank');
+            window.open('booking.php?room=' + encodeURIComponent(roomName), '_blank');
 }
 
 // Auto-hide alerts after 5 seconds

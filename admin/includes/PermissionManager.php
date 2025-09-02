@@ -348,9 +348,9 @@ class PermissionManager {
         // Bookings & Reservations
         if ($this->hasPermission(self::MODULE_BOOKINGS, '*', self::PERMISSION_READ)) {
             $menu['bookings'] = [
-                'title' => 'Reservations',
+                'title' => 'Bookings',
                 'icon' => 'fas fa-calendar-alt',
-                'url' => 'reservation.php',
+                'url' => 'booking.php',
                 'submenu' => $this->getBookingsSubmenu()
             ];
         }

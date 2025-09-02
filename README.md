@@ -31,11 +31,13 @@ Hotel/
 ## Getting Started
 
 1. **Prerequisites**
+
    - XAMPP (Apache + MySQL + PHP)
    - PHP 7.4 or higher
    - MySQL 5.7 or higher
 
 2. **Installation**
+
    - Clone this repository
    - Configure your database settings in `config/database.php`
    - Run the setup scripts in the `setup/` directory
@@ -51,6 +53,7 @@ Hotel/
 ### Git Workflow
 
 1. **Initial Setup** (already done):
+
    ```bash
    git init
    git add .
@@ -58,6 +61,7 @@ Hotel/
    ```
 
 2. **Daily Development**:
+
    ```bash
    git add .
    git commit -m "Description of changes"

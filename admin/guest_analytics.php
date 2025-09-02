@@ -279,7 +279,7 @@ $cancellation_rate = $summary_stats['total_bookings'] > 0 ?
                 <div class="col-8">
                     <h4>KES <?php echo number_format($summary_stats['avg_booking_value'], 0); ?></h4>
                     <p>Avg Booking Value</p>
-                    <small>per reservation</small>
+                                            <small>per booking</small>
                 </div>
                 <div class="col-4 text-right">
                     <i class="fas fa-money-bill fa-3x"></i>

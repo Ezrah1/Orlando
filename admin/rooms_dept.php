@@ -152,9 +152,9 @@ $rooms_result = mysqli_query($con, $rooms_query);
                                                     <i class="fas fa-calendar-plus"></i> Book
                                                 </a>
                                             <?php else: ?>
-                                                <a href="reservation.php?room=<?php echo $room['room_name']; ?>" class="btn btn-sm btn-outline-info">
-                                                    <i class="fas fa-eye"></i> View Booking
-                                                </a>
+                                                                                            <a href="booking.php?room=<?php echo $room['room_name']; ?>" class="btn btn-sm btn-outline-info">
+                                                <i class="fas fa-eye"></i> View Booking
+                                            </a>
                                             <?php endif; ?>
                                         </td>
                                     </tr>
@@ -186,8 +186,8 @@ $rooms_result = mysqli_query($con, $rooms_query);
                     <a href="staff_booking.php" class="list-group-item list-group-item-action">
                         <i class="fas fa-calendar-plus text-success"></i> New Booking
                     </a>
-                    <a href="reservation.php" class="list-group-item list-group-item-action">
-                        <i class="fas fa-list text-info"></i> All Reservations
+                    <a href="booking.php" class="list-group-item list-group-item-action">
+                        <i class="fas fa-list text-info"></i> All Bookings
                     </a>
                     <a href="housekeeping.php" class="list-group-item list-group-item-action">
                         <i class="fas fa-broom text-warning"></i> Housekeeping

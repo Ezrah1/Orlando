@@ -204,7 +204,7 @@ try {
             'type' => 'guest_service',
             'title' => 'Check-in Backlog',
             'message' => $guests['pending_checkins'] . ' guests waiting to check in',
-            'action_url' => 'reservation.php',
+            'action_url' => 'booking.php',
             'severity' => 'info'
         ];
     }

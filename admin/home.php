@@ -494,9 +494,9 @@ $occupancy_rate = $room_data['total_rooms'] > 0 ? round(($room_data['occupied_ro
                             <i class="fas fa-bed"></i>
                             Manage Rooms
                         </a>
-                        <a href="reservation.php" class="quick-action-btn" style="background: linear-gradient(135deg, #ed8936, #f6ad55);">
+                        <a href="booking.php" class="quick-action-btn" style="background: linear-gradient(135deg, #ed8936, #f6ad55);">
                             <i class="fas fa-calendar-alt"></i>
-                            View Reservations
+                            View Bookings
                         </a>
                         <a href="financial_reports.php" class="quick-action-btn" style="background: linear-gradient(135deg, #9f7aea, #b794f6);">
                             <i class="fas fa-chart-bar"></i>

@@ -134,7 +134,7 @@ function generate_auto_notifications() {
                 'icon' => 'fas fa-clock',
                 'title' => 'Pending Bookings',
                 'message' => "{$pending_bookings} booking(s) awaiting confirmation",
-                'action_url' => 'reservation.php?status=pending',
+                'action_url' => 'booking.php?status=pending',
                 'priority' => 'medium'
             ];
         }
@@ -150,7 +150,7 @@ function generate_auto_notifications() {
                 'icon' => 'fas fa-calendar-check',
                 'title' => 'Today\'s Check-ins',
                 'message' => "{$todays_checkins} guest(s) checking in today",
-                'action_url' => 'reservation.php?checkin_date=' . date('Y-m-d'),
+                'action_url' => 'booking.php?checkin_date=' . date('Y-m-d'),
                 'priority' => 'high'
             ];
         }

@@ -93,16 +93,16 @@ $current_page = basename($_SERVER['PHP_SELF']);
 
         <!-- RESERVATIONS MODULE -->
         <?php if (hasModuleAccess($user_role, ['Admin', 'Director', 'Operations_Manager', 'DeptManager', 'Staff'])): ?>
-        <div class="nav-module" data-module="reservations">
+        <div class="nav-module" data-module="bookings">
             <div class="module-header">
                 <i class="fas fa-calendar-alt module-icon"></i>
-                <span class="module-title">Reservations</span>
+                <span class="module-title">Accommodation</span>
                 <i class="fas fa-chevron-down toggle-icon"></i>
             </div>
             <div class="module-content">
-                <a href="reservation.php" class="nav-item <?php echo $current_page == 'reservation.php' ? 'active' : ''; ?>">
+                <a href="booking.php" class="nav-item <?php echo $current_page == 'booking.php' ? 'active' : ''; ?>">
                     <i class="fas fa-list"></i>
-                    <span>All Reservations</span>
+                    <span>All Bookings</span>
                 </a>
                 <a href="bookings_management.php" class="nav-item <?php echo $current_page == 'bookings_management.php' ? 'active' : ''; ?>">
                     <i class="fas fa-calendar-check"></i>
