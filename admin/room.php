@@ -88,8 +88,19 @@ $occupied_rooms = mysqli_fetch_assoc(mysqli_query($con, "SELECT COUNT(DISTINCT t
 $available_rooms = $total_rooms - $occupied_rooms;
 $avg_price = mysqli_fetch_assoc(mysqli_query($con, "SELECT AVG(base_price) as avg FROM named_rooms WHERE is_active = 1"))['avg'] ?? 0;
 
-// Get all rooms for display
-$rooms_query = "SELECT * FROM named_rooms ORDER BY is_active DESC, base_price DESC";
+// Get all rooms for display with occupancy status
+$rooms_query = "SELECT nr.*, 
+                       CASE 
+                           WHEN nr.base_price <= 5000 THEN 'Standard'
+                           WHEN nr.base_price <= 10000 THEN 'Deluxe'
+                           ELSE 'Suite'
+                       END as room_type_name,
+                       CASE 
+                           WHEN EXISTS(SELECT 1 FROM roombook rb WHERE rb.troom = nr.room_name AND rb.cout >= CURDATE() AND rb.stat = 'Confirmed') THEN 1
+                           ELSE 0
+                       END as is_occupied
+                FROM named_rooms nr 
+                ORDER BY nr.is_active DESC, nr.base_price DESC";
 $rooms_result = mysqli_query($con, $rooms_query);
 ?>
 
@@ -125,6 +136,41 @@ $rooms_result = mysqli_query($con, $rooms_query);
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
 <?php endif; ?>
+
+<!-- Quick Actions -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-bolt me-2"></i>Quick Actions</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-2">
+                        <a href="staff_booking.php" class="btn btn-outline-success w-100">
+                            <i class="fas fa-calendar-plus me-2"></i>New Booking
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="booking.php" class="btn btn-outline-info w-100">
+                            <i class="fas fa-list me-2"></i>All Bookings
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="housekeeping.php" class="btn btn-outline-warning w-100">
+                            <i class="fas fa-broom me-2"></i>Housekeeping
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="booking_calendar.php" class="btn btn-outline-primary w-100">
+                            <i class="fas fa-calendar-alt me-2"></i>Calendar View
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- Room Statistics -->
 <div class="row mb-4">
@@ -200,10 +246,17 @@ $rooms_result = mysqli_query($con, $rooms_query);
         <div class="col-lg-4 col-md-6 mb-4">
             <div class="card h-100 <?php echo $room['is_active'] ? '' : 'border-danger'; ?>">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0"><?php echo htmlspecialchars($room['room_name']); ?></h5>
+                    <div>
+                        <h5 class="card-title mb-0"><?php echo htmlspecialchars($room['room_name']); ?></h5>
+                        <small class="text-muted"><?php echo htmlspecialchars($room['room_type_name'] ?? 'Standard'); ?></small>
+                    </div>
                     <div>
                         <?php if ($room['is_active']): ?>
-                            <span class="badge bg-success">Active</span>
+                            <?php if ($room['is_occupied']): ?>
+                                <span class="badge bg-warning">Occupied</span>
+                            <?php else: ?>
+                                <span class="badge bg-success">Available</span>
+                            <?php endif; ?>
                         <?php else: ?>
                             <span class="badge bg-danger">Inactive</span>
                         <?php endif; ?>
@@ -238,6 +291,12 @@ $rooms_result = mysqli_query($con, $rooms_query);
                                 onclick="viewBookings('<?php echo $room['room_name']; ?>')">
                             <i class="fas fa-calendar"></i> Bookings
                         </button>
+                        <?php if ($room['is_active'] && !$room['is_occupied']): ?>
+                        <a href="staff_booking.php?room=<?php echo urlencode($room['room_name']); ?>" 
+                           class="btn btn-outline-success btn-sm">
+                            <i class="fas fa-calendar-plus"></i> Book Now
+                        </a>
+                        <?php endif; ?>
                         <?php if ($room['is_active']): ?>
                         <button type="button" class="btn btn-outline-danger btn-sm" 
                                 onclick="deactivateRoom(<?php echo $room['id']; ?>)">

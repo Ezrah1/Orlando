@@ -17,6 +17,7 @@ $page_title = 'Booking Management';
 
 // Get filter parameters
 $status_filter = $_GET['status'] ?? 'all';
+$payment_status_filter = $_GET['payment_status'] ?? 'all';
 $room_filter = $_GET['room'] ?? '';
 $guest_search = $_GET['guest'] ?? '';
 $date_from = $_GET['date_from'] ?? '';
@@ -66,6 +67,15 @@ $confirmed_bookings = mysqli_fetch_assoc(mysqli_query($con, "SELECT COUNT(*) as 
 $pending_bookings = mysqli_fetch_assoc(mysqli_query($con, "SELECT COUNT(*) as count FROM roombook WHERE stat = 'Pending'"))['count'];
 $cancelled_bookings = mysqli_fetch_assoc(mysqli_query($con, "SELECT COUNT(*) as count FROM roombook WHERE stat = 'Cancelled'"))['count'];
 
+// Get payment statistics
+$paid_bookings = mysqli_fetch_assoc(mysqli_query($con, "SELECT COUNT(*) as count FROM roombook WHERE payment_status = 'paid'"))['count'];
+$pending_payments = mysqli_fetch_assoc(mysqli_query($con, "SELECT COUNT(*) as count FROM roombook WHERE payment_status = 'pending'"))['count'];
+
+// Get today's check-ins and check-outs
+$today = date('Y-m-d');
+$todays_checkins = mysqli_fetch_assoc(mysqli_query($con, "SELECT COUNT(*) as count FROM roombook WHERE cin = '$today'"))['count'];
+$todays_checkouts = mysqli_fetch_assoc(mysqli_query($con, "SELECT COUNT(*) as count FROM roombook WHERE cout = '$today'"))['count'];
+
 // Build dynamic query with filters
 $where_conditions = [];
 $query_params = [];
@@ -73,6 +83,11 @@ $query_params = [];
 if ($status_filter !== 'all') {
     $where_conditions[] = "rb.stat = ?";
     $query_params[] = $status_filter;
+}
+
+if ($payment_status_filter !== 'all') {
+    $where_conditions[] = "rb.payment_status = ?";
+    $query_params[] = $payment_status_filter;
 }
 
 if (!empty($room_filter)) {
@@ -198,6 +213,17 @@ if (!empty($query_params)) {
                         </select>
                     </div>
                     
+                    <!-- Payment Status Filter -->
+                    <div class="col-md-2 mb-3">
+                        <label for="payment_status" class="form-label">Payment Status</label>
+                        <select class="form-select" id="payment_status" name="payment_status">
+                            <option value="all" <?php echo ($_GET['payment_status'] ?? 'all') === 'all' ? 'selected' : ''; ?>>All Payments</option>
+                            <option value="paid" <?php echo ($_GET['payment_status'] ?? 'all') === 'paid' ? 'selected' : ''; ?>>Paid</option>
+                            <option value="pending" <?php echo ($_GET['payment_status'] ?? 'all') === 'pending' ? 'selected' : ''; ?>>Pending Payment</option>
+                            <option value="partial" <?php echo ($_GET['payment_status'] ?? 'all') === 'partial' ? 'selected' : ''; ?>>Partial Payment</option>
+                        </select>
+                    </div>
+                    
                     <!-- Room Filter -->
                     <div class="col-md-2 mb-3">
                         <label for="room" class="form-label">Room Type</label>
@@ -272,65 +298,138 @@ if (!empty($query_params)) {
 
 <!-- Booking Statistics -->
 <div class="row mb-4">
-    <div class="col-lg-3 col-md-6 mb-3">
+    <div class="col-lg-2 col-md-4 mb-3">
         <div class="card bg-primary text-white h-100">
             <div class="card-body">
                 <div class="d-flex justify-content-between">
                     <div>
-                        <h3 class="mb-0"><?php echo $total_bookings; ?></h3>
-                        <p class="mb-0">Total Bookings</p>
+                        <h4 class="mb-0"><?php echo $total_bookings; ?></h4>
+                        <p class="mb-0 small">Total Bookings</p>
                     </div>
                     <div class="align-self-center">
-                        <i class="fas fa-calendar-alt fa-2x"></i>
+                        <i class="fas fa-calendar-alt fa-lg"></i>
                     </div>
                 </div>
             </div>
         </div>
     </div>
     
-    <div class="col-lg-3 col-md-6 mb-3">
+    <div class="col-lg-2 col-md-4 mb-3">
         <div class="card bg-success text-white h-100">
             <div class="card-body">
                 <div class="d-flex justify-content-between">
                     <div>
-                        <h3 class="mb-0"><?php echo $confirmed_bookings; ?></h3>
-                        <p class="mb-0">Confirmed</p>
+                        <h4 class="mb-0"><?php echo $confirmed_bookings; ?></h4>
+                        <p class="mb-0 small">Confirmed</p>
                     </div>
                     <div class="align-self-center">
-                        <i class="fas fa-check-circle fa-2x"></i>
+                        <i class="fas fa-check-circle fa-lg"></i>
                     </div>
                 </div>
             </div>
         </div>
     </div>
     
-    <div class="col-lg-3 col-md-6 mb-3">
+    <div class="col-lg-2 col-md-4 mb-3">
         <div class="card bg-warning text-white h-100">
             <div class="card-body">
                 <div class="d-flex justify-content-between">
                     <div>
-                        <h3 class="mb-0"><?php echo $pending_bookings; ?></h3>
-                        <p class="mb-0">Pending</p>
+                        <h4 class="mb-0"><?php echo $pending_bookings; ?></h4>
+                        <p class="mb-0 small">Pending</p>
                     </div>
                     <div class="align-self-center">
-                        <i class="fas fa-clock fa-2x"></i>
+                        <i class="fas fa-clock fa-lg"></i>
                     </div>
                 </div>
             </div>
         </div>
     </div>
     
-    <div class="col-lg-3 col-md-6 mb-3">
+    <div class="col-lg-2 col-md-4 mb-3">
         <div class="card bg-danger text-white h-100">
             <div class="card-body">
                 <div class="d-flex justify-content-between">
                     <div>
-                        <h3 class="mb-0"><?php echo $cancelled_bookings; ?></h3>
-                        <p class="mb-0">Cancelled</p>
+                        <h4 class="mb-0"><?php echo $cancelled_bookings; ?></h4>
+                        <p class="mb-0 small">Cancelled</p>
                     </div>
                     <div class="align-self-center">
-                        <i class="fas fa-times-circle fa-2x"></i>
+                        <i class="fas fa-times-circle fa-lg"></i>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-2 col-md-4 mb-3">
+        <div class="card bg-info text-white h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="mb-0"><?php echo $paid_bookings; ?></h4>
+                        <p class="mb-0 small">Paid</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-credit-card fa-lg"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-2 col-md-4 mb-3">
+        <div class="card bg-secondary text-white h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="mb-0"><?php echo $pending_payments; ?></h4>
+                        <p class="mb-0 small">Pending Payment</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-exclamation-triangle fa-lg"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Daily Operations -->
+<div class="row mb-4">
+    <div class="col-lg-6 mb-3">
+        <div class="card border-info h-100">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0"><i class="fas fa-calendar-day me-2"></i>Today's Operations</h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <h4 class="text-info"><?php echo $todays_checkins; ?></h4>
+                        <p class="mb-0 small">Check-ins</p>
+                    </div>
+                    <div class="col-6">
+                        <h4 class="text-info"><?php echo $todays_checkouts; ?></h4>
+                        <p class="mb-0 small">Check-outs</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6 mb-3">
+        <div class="card border-success h-100">
+            <div class="card-header bg-success text-white">
+                <h6 class="mb-0"><i class="fas fa-chart-line me-2"></i>Quick Actions</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="staff_booking.php" class="btn btn-outline-success btn-sm">
+                        <i class="fas fa-plus me-1"></i>Create New Booking
+                    </a>
+                    <a href="booking_calendar.php" class="btn btn-outline-info btn-sm">
+                        <i class="fas fa-calendar me-1"></i>View Calendar
+                    </a>
                 </div>
             </div>
         </div>
@@ -363,6 +462,9 @@ if (!empty($query_params)) {
                                 <li><a class="dropdown-item" href="?status=Pending">Pending Only</a></li>
                                 <li><a class="dropdown-item" href="?status=Cancelled">Cancelled Only</a></li>
                                 <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="?payment_status=paid">Paid Bookings</a></li>
+                                <li><a class="dropdown-item" href="?payment_status=pending">Pending Payments</a></li>
+                                <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item" href="?date_from=<?php echo date('Y-m-d'); ?>">Today's Check-ins</a></li>
                                 <li><a class="dropdown-item" href="?date_to=<?php echo date('Y-m-d'); ?>">Today's Check-outs</a></li>
                             </ul>
@@ -380,6 +482,7 @@ if (!empty($query_params)) {
                                 <th>Room</th>
                                 <th>Dates</th>
                                 <th>Status</th>
+                                <th>Payment</th>
                                 <th>Amount</th>
                                 <th>Actions</th>
                             </tr>
@@ -439,6 +542,27 @@ if (!empty($query_params)) {
                                             <?php echo htmlspecialchars($booking['stat']); ?>
                                         </span>
                                     </td>
+                                    
+                                    <td>
+                                        <?php
+                                        $payment_class = '';
+                                        $payment_status = $booking['payment_status'] ?? 'pending';
+                                        switch($payment_status) {
+                                            case 'paid': $payment_class = 'success'; break;
+                                            case 'pending': $payment_class = 'warning'; break;
+                                            case 'partial': $payment_class = 'info'; break;
+                                            default: $payment_class = 'secondary';
+                                        }
+                                        ?>
+                                        <span class="badge bg-<?php echo $payment_class; ?>">
+                                            <?php echo ucfirst($payment_status); ?>
+                                        </span>
+                                        <?php if ($payment_status === 'pending'): ?>
+                                            <br><small class="text-muted">Click payment button to process</small>
+                                        <?php elseif ($payment_status === 'paid'): ?>
+                                            <br><small class="text-success">Payment completed</small>
+                                        <?php endif; ?>
+                                    </td>
                                     <td>
                                         <span class="fw-bold text-primary">KES <?php echo number_format($booking['nodays'] * ($booking['base_price'] ?? 0), 2); ?></span>
                                         <br>
@@ -488,17 +612,23 @@ if (!empty($query_params)) {
                                             </div>
                                             <?php endif; ?>
                                             
-                                            <a href="payment.php?booking_id=<?php echo $booking['id']; ?>" 
-                                               class="btn btn-outline-info" title="Payment">
-                                                <i class="fas fa-credit-card"></i>
-                                            </a>
+                                            <?php if (($booking['payment_status'] ?? 'pending') === 'paid'): ?>
+                                                <button type="button" class="btn btn-success btn-sm" disabled title="Payment Completed">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                            <?php else: ?>
+                                                <a href="payment.php?booking_id=<?php echo $booking['id']; ?>" 
+                                                   class="btn btn-outline-warning btn-sm" title="Process Payment">
+                                                    <i class="fas fa-credit-card"></i>
+                                                </a>
+                                            <?php endif; ?>
                                         </div>
                                     </td>
                                 </tr>
                                 <?php endwhile; ?>
                             <?php else: ?>
                                 <tr>
-                                    <td colspan="7" class="text-center text-muted py-4">
+                                    <td colspan="8" class="text-center text-muted py-4">
                                         <i class="fas fa-calendar-times fa-3x mb-3"></i>
                                         <br>
                                         No bookings found.
@@ -602,10 +732,17 @@ function exportBookings() {
 // Auto-submit form when certain filters change
 document.addEventListener('DOMContentLoaded', function() {
     const statusSelect = document.getElementById('status');
+    const paymentStatusSelect = document.getElementById('payment_status');
     const roomSelect = document.getElementById('room');
     
-    // Auto-submit when status or room changes
+    // Auto-submit when status, payment status, or room changes
     statusSelect.addEventListener('change', function() {
+        if (this.value !== 'all') {
+            document.getElementById('filterForm').submit();
+        }
+    });
+    
+    paymentStatusSelect.addEventListener('change', function() {
         if (this.value !== 'all') {
             document.getElementById('filterForm').submit();
         }
@@ -652,7 +789,39 @@ document.addEventListener('DOMContentLoaded', function() {
             this.value = '';
         }
     });
+    
+    // Add table row highlighting for different statuses
+    const tableRows = document.querySelectorAll('#bookingsTable tbody tr');
+    tableRows.forEach(row => {
+        const status = row.getAttribute('data-status');
+        const paymentStatus = row.querySelector('td:nth-child(6) .badge').textContent.toLowerCase();
+        
+        if (status === 'Cancelled') {
+            row.classList.add('table-danger');
+        } else if (paymentStatus === 'pending') {
+            row.classList.add('table-warning');
+        } else if (status === 'Confirmed' && paymentStatus === 'paid') {
+            row.classList.add('table-success');
+        }
+    });
+    
+    // Add search highlighting
+    const guestSearch = document.getElementById('guest');
+    if (guestSearch.value) {
+        highlightSearchTerm(guestSearch.value);
+    }
 });
+
+function highlightSearchTerm(searchTerm) {
+    const tableCells = document.querySelectorAll('#bookingsTable tbody td');
+    const regex = new RegExp(`(${searchTerm})`, 'gi');
+    
+    tableCells.forEach(cell => {
+        if (cell.textContent.toLowerCase().includes(searchTerm.toLowerCase())) {
+            cell.innerHTML = cell.textContent.replace(regex, '<mark>$1</mark>');
+        }
+    });
+}
 
 // Add search functionality for guest field
 document.getElementById('guest').addEventListener('keypress', function(e) {

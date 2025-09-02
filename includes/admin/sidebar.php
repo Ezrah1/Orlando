@@ -116,10 +116,6 @@ $current_page = basename($_SERVER['PHP_SELF']);
                     <i class="fas fa-bed"></i>
                     <span>Room Management</span>
                 </a>
-                <a href="rooms_dept.php" class="nav-item <?php echo $current_page == 'rooms_dept.php' ? 'active' : ''; ?>">
-                    <i class="fas fa-door-open"></i>
-                    <span>Rooms Department</span>
-                </a>
                 <a href="booking_calendar.php" class="nav-item <?php echo $current_page == 'booking_calendar.php' ? 'active' : ''; ?>">
                     <i class="fas fa-calendar-alt"></i>
                     <span>Calendar View</span>

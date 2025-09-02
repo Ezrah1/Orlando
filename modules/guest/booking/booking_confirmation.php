@@ -838,7 +838,8 @@ include('../../../includes/components/qr_generator.php');
                     <div class="detail-item">
                         <span class="detail-label">Guests:</span>
                         <span class="detail-value"><?php 
-                            $adults = $_SESSION['booking_details']['adults'] ?? 1;
+                            // Try to get from session first, fallback to database or defaults
+                            $adults = $_SESSION['booking_details']['adults'] ?? 2;
                             $children = $_SESSION['booking_details']['children'] ?? 0;
                             echo $adults . ' adult(s), ' . $children . ' child(ren)'; 
                         ?></span>
@@ -846,7 +847,11 @@ include('../../../includes/components/qr_generator.php');
                     
                     <div class="detail-item">
                         <span class="detail-label">Payment:</span>
-                        <span class="detail-value"><?php echo ucfirst($_SESSION['booking_details']['payment_method'] ?? 'N/A'); ?></span>
+                        <span class="detail-value"><?php 
+                            // Try to get from session first, fallback to database or defaults
+                            $payment_method = $_SESSION['booking_details']['payment_method'] ?? 'N/A';
+                            echo ucfirst($payment_method); 
+                        ?></span>
                     </div>
                     
                     <div class="detail-item">
@@ -887,7 +892,16 @@ include('../../../includes/components/qr_generator.php');
                     <!-- Amount Highlight -->
                     <div class="amount-highlight">
                         <div class="amount-text">Total: KES <?php 
+                            // Try to get from session first, fallback to database calculation
                             $total_amount = $_SESSION['booking_details']['total_amount'] ?? 0;
+                            if ($total_amount == 0) {
+                                // Calculate from database for staff bookings
+                                $room_query = "SELECT base_price FROM named_rooms WHERE room_name = '" . mysqli_real_escape_string($con, $booking['TRoom']) . "'";
+                                $room_result = mysqli_query($con, $room_query);
+                                if ($room_result && $room_data = mysqli_fetch_assoc($room_result)) {
+                                    $total_amount = $room_data['base_price'] * $booking['nodays'];
+                                }
+                            }
                             echo number_format((float)$total_amount, 2); 
                         ?></div>
                     </div>
