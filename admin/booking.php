@@ -151,8 +151,8 @@ if (!empty($query_params)) {
             <a href="staff_booking.php" class="btn btn-primary">
                 <i class="fas fa-plus me-2"></i>New Booking
             </a>
-            <a href="roombook.php" class="btn btn-outline-secondary">
-                <i class="fas fa-calendar me-2"></i>Booking Calendar
+            <a href="booking_calendar.php" class="btn btn-outline-secondary">
+                <i class="fas fa-calendar me-2"></i>Calendar View
             </a>
         </div>
     </div>

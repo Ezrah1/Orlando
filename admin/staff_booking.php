@@ -66,11 +66,10 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
     if(mysqli_query($con, $booking_sql)) {
         $booking_id = mysqli_insert_id($con);
         
-        // If payment is completed, record it
+        // Update payment status in roombook table
         if($payment_status == 'paid') {
-            $payment_sql = "INSERT INTO payment (booking_id, amount, payment_method, transaction_ref, status, payment_date) 
-                           VALUES ($booking_id, $total, '$payment_method', 'STAFF-" . date('YmdHis') . "', 'completed', NOW())";
-            mysqli_query($con, $payment_sql);
+            $update_payment_sql = "UPDATE roombook SET payment_status = 'paid' WHERE id = $booking_id";
+            mysqli_query($con, $update_payment_sql);
         }
         
         $success = "Booking created successfully! Reference: $booking_ref";
