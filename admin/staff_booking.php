@@ -1,8 +1,17 @@
 <?php
-$page_title = 'Staff Booking';
-include '../includes/admin/header.php';
-include '../includes/components/alerts.php';
-include '../includes/components/forms.php';
+// Start session if not already started
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+// Check if user is logged in
+if (!isset($_SESSION['user_id']) && !isset($_SESSION['user'])) {
+    header('Location: index.php');
+    exit();
+}
+
+// Include database connection
+include 'db.php';
 
 // Get room data for the booking form
 $rooms_query = "SELECT * FROM named_rooms WHERE is_active = 1 ORDER BY base_price ASC";
@@ -72,15 +81,19 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
             mysqli_query($con, $update_payment_sql);
         }
         
-        $success = "Booking created successfully! Reference: $booking_ref";
-        
-        // Redirect to print invoice
+        // Redirect to print invoice immediately
         header("Location: print.php?id=$booking_id");
         exit();
     } else {
         $error = "Booking failed. Please try again.";
     }
 }
+
+// Now include header files AFTER all potential redirects
+$page_title = 'Staff Booking';
+include '../includes/admin/header.php';
+include '../includes/components/alerts.php';
+include '../includes/components/forms.php';
 ?>
 
 <!-- Page Header -->
@@ -93,10 +106,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
 // Display session alerts
 display_session_alerts();
 
-// Display success or error messages
-if (isset($success)) {
-    echo render_alert($success, 'success');
-}
+// Display error messages only (success redirects immediately)
 if (isset($error)) {
     echo render_alert($error, 'danger');
 }
