@@ -15,6 +15,15 @@ include 'db.php';
 
 $page_title = 'Booking Management';
 
+// Get filter parameters
+$status_filter = $_GET['status'] ?? 'all';
+$room_filter = $_GET['room'] ?? '';
+$guest_search = $_GET['guest'] ?? '';
+$date_from = $_GET['date_from'] ?? '';
+$date_to = $_GET['date_to'] ?? '';
+$amount_min = $_GET['amount_min'] ?? '';
+$amount_max = $_GET['amount_max'] ?? '';
+
 // Include the dynamic admin header
 include '../includes/admin/header.php';
 include '../includes/components/alerts.php';
@@ -57,17 +66,78 @@ $confirmed_bookings = mysqli_fetch_assoc(mysqli_query($con, "SELECT COUNT(*) as 
 $pending_bookings = mysqli_fetch_assoc(mysqli_query($con, "SELECT COUNT(*) as count FROM roombook WHERE stat = 'Pending'"))['count'];
 $cancelled_bookings = mysqli_fetch_assoc(mysqli_query($con, "SELECT COUNT(*) as count FROM roombook WHERE stat = 'Cancelled'"))['count'];
 
-// Get recent bookings with room details
+// Build dynamic query with filters
+$where_conditions = [];
+$query_params = [];
+
+if ($status_filter !== 'all') {
+    $where_conditions[] = "rb.stat = ?";
+    $query_params[] = $status_filter;
+}
+
+if (!empty($room_filter)) {
+    $where_conditions[] = "rb.troom = ?";
+    $query_params[] = $room_filter;
+}
+
+if (!empty($guest_search)) {
+    $where_conditions[] = "(rb.FName LIKE ? OR rb.LName LIKE ? OR rb.Email LIKE ? OR rb.Phone LIKE ?)";
+    $search_term = "%$guest_search%";
+    $query_params[] = $search_term;
+    $query_params[] = $search_term;
+    $query_params[] = $search_term;
+    $query_params[] = $search_term;
+}
+
+if (!empty($date_from)) {
+    $where_conditions[] = "rb.cin >= ?";
+    $query_params[] = $date_from;
+}
+
+if (!empty($date_to)) {
+    $where_conditions[] = "rb.cout <= ?";
+    $query_params[] = $date_to;
+}
+
+if (!empty($amount_min)) {
+    $where_conditions[] = "(rb.nodays * COALESCE(nr.base_price, 0)) >= ?";
+    $query_params[] = $amount_min;
+}
+
+if (!empty($amount_max)) {
+    $where_conditions[] = "(rb.nodays * COALESCE(nr.base_price, 0)) <= ?";
+    $query_params[] = $amount_max;
+}
+
+// Build and execute the main query
 $bookings_query = "
     SELECT 
         rb.*,
         nr.room_name,
         nr.base_price
     FROM roombook rb 
-    LEFT JOIN named_rooms nr ON rb.troom = nr.room_name 
-    ORDER BY rb.id DESC 
-    LIMIT 50";
-$bookings_result = mysqli_query($con, $bookings_query);
+    LEFT JOIN named_rooms nr ON rb.troom = nr.room_name";
+
+if (!empty($where_conditions)) {
+    $bookings_query .= " WHERE " . implode(' AND ', $where_conditions);
+}
+
+$bookings_query .= " ORDER BY rb.id DESC LIMIT 100";
+
+// Execute query with prepared statement if there are parameters
+if (!empty($query_params)) {
+    $stmt = mysqli_prepare($con, $bookings_query);
+    if ($stmt) {
+        $types = str_repeat('s', count($query_params));
+        mysqli_stmt_bind_param($stmt, $types, ...$query_params);
+        mysqli_stmt_execute($stmt);
+        $bookings_result = mysqli_stmt_get_result($stmt);
+    } else {
+        $bookings_result = mysqli_query($con, $bookings_query);
+    }
+} else {
+    $bookings_result = mysqli_query($con, $bookings_query);
+}
 ?>
 
 <!-- Page Header -->
@@ -102,6 +172,103 @@ $bookings_result = mysqli_query($con, $bookings_query);
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
 <?php endif; ?>
+
+<!-- Advanced Filters Section -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-white">
+        <h6 class="mb-0">
+            <i class="fas fa-filter me-2"></i>Advanced Filters
+            <button class="btn btn-sm btn-outline-secondary float-end" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse">
+                <i class="fas fa-chevron-down"></i>
+            </button>
+        </h6>
+    </div>
+    <div class="collapse show" id="filterCollapse">
+        <div class="card-body">
+            <form method="GET" action="" id="filterForm">
+                <div class="row">
+                    <!-- Status Filter -->
+                    <div class="col-md-2 mb-3">
+                        <label for="status" class="form-label">Status</label>
+                        <select class="form-select" id="status" name="status">
+                            <option value="all" <?php echo $status_filter === 'all' ? 'selected' : ''; ?>>All Status</option>
+                            <option value="Confirmed" <?php echo $status_filter === 'Confirmed' ? 'selected' : ''; ?>>Confirmed</option>
+                            <option value="Pending" <?php echo $status_filter === 'Pending' ? 'selected' : ''; ?>>Pending</option>
+                            <option value="Cancelled" <?php echo $status_filter === 'Cancelled' ? 'selected' : ''; ?>>Cancelled</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Room Filter -->
+                    <div class="col-md-2 mb-3">
+                        <label for="room" class="form-label">Room Type</label>
+                        <select class="form-select" id="room" name="room">
+                            <option value="">All Rooms</option>
+                            <?php
+                            $rooms_query = "SELECT DISTINCT room_name FROM named_rooms ORDER BY room_name";
+                            $rooms_result = mysqli_query($con, $rooms_query);
+                            while ($room = mysqli_fetch_assoc($rooms_result)):
+                            ?>
+                                <option value="<?php echo htmlspecialchars($room['room_name']); ?>" 
+                                        <?php echo $room_filter === $room['room_name'] ? 'selected' : ''; ?>>
+                                    <?php echo htmlspecialchars($room['room_name']); ?>
+                                </option>
+                            <?php endwhile; ?>
+                        </select>
+                    </div>
+                    
+                    <!-- Guest Search -->
+                    <div class="col-md-3 mb-3">
+                        <label for="guest" class="form-label">Guest Search</label>
+                        <input type="text" class="form-control" id="guest" name="guest" 
+                               placeholder="Name, Email, Phone" value="<?php echo htmlspecialchars($guest_search); ?>">
+                    </div>
+                    
+                    <!-- Date From -->
+                    <div class="col-md-2 mb-3">
+                        <label for="date_from" class="form-label">Check-in From</label>
+                        <input type="date" class="form-control" id="date_from" name="date_from" 
+                               value="<?php echo $date_from; ?>">
+                    </div>
+                    
+                    <!-- Date To -->
+                    <div class="col-md-2 mb-3">
+                        <label for="date_to" class="form-label">Check-out To</label>
+                        <input type="date" class="form-control" id="date_to" name="date_to" 
+                               value="<?php echo $date_to; ?>">
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <!-- Amount Range -->
+                    <div class="col-md-2 mb-3">
+                        <label for="amount_min" class="form-label">Min Amount</label>
+                        <input type="number" class="form-control" id="amount_min" name="amount_min" 
+                               placeholder="0" value="<?php echo $amount_min; ?>">
+                    </div>
+                    
+                    <div class="col-md-2 mb-3">
+                        <label for="amount_max" class="form-label">Max Amount</label>
+                        <input type="number" class="form-control" id="amount_max" name="amount_max" 
+                               placeholder="999999" value="<?php echo $amount_max; ?>">
+                    </div>
+                    
+                    <!-- Filter Actions -->
+                    <div class="col-md-8 mb-3 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary me-2">
+                            <i class="fas fa-search me-1"></i>Apply Filters
+                        </button>
+                        <a href="booking.php" class="btn btn-outline-secondary me-2">
+                            <i class="fas fa-times me-1"></i>Clear All
+                        </a>
+                        <button type="button" class="btn btn-outline-info" onclick="exportBookings()">
+                            <i class="fas fa-download me-1"></i>Export
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
 <!-- Booking Statistics -->
 <div class="row mb-4">
@@ -177,7 +344,10 @@ $bookings_result = mysqli_query($con, $bookings_query);
             <div class="card-header bg-white">
                 <div class="d-flex justify-content-between align-items-center">
                     <h5 class="card-title mb-0">
-                        <i class="fas fa-list me-2"></i>Recent Bookings
+                        <i class="fas fa-list me-2"></i>Bookings
+                        <?php if (!empty($where_conditions)): ?>
+                            <span class="badge bg-info ms-2">Filtered</span>
+                        <?php endif; ?>
                     </h5>
                     <div>
                         <button class="btn btn-sm btn-outline-primary" onclick="refreshTable()">
@@ -185,13 +355,16 @@ $bookings_result = mysqli_query($con, $bookings_query);
                         </button>
                         <div class="btn-group">
                             <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
-                                <i class="fas fa-filter me-1"></i>Filter
+                                <i class="fas fa-filter me-1"></i>Quick Filter
                             </button>
                             <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="#" onclick="filterTable('all')">All Bookings</a></li>
-                                <li><a class="dropdown-item" href="#" onclick="filterTable('Confirmed')">Confirmed Only</a></li>
-                                <li><a class="dropdown-item" href="#" onclick="filterTable('Pending')">Pending Only</a></li>
-                                <li><a class="dropdown-item" href="#" onclick="filterTable('Cancelled')">Cancelled Only</a></li>
+                                <li><a class="dropdown-item" href="?status=all">All Bookings</a></li>
+                                <li><a class="dropdown-item" href="?status=Confirmed">Confirmed Only</a></li>
+                                <li><a class="dropdown-item" href="?status=Pending">Pending Only</a></li>
+                                <li><a class="dropdown-item" href="?status=Cancelled">Cancelled Only</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="?date_from=<?php echo date('Y-m-d'); ?>">Today's Check-ins</a></li>
+                                <li><a class="dropdown-item" href="?date_to=<?php echo date('Y-m-d'); ?>">Today's Check-outs</a></li>
                             </ul>
                         </div>
                     </div>
@@ -411,6 +584,83 @@ function filterTable(status) {
         }
     }
 }
+
+function exportBookings() {
+    // Get current filter parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const exportUrl = 'export_bookings.php?' + urlParams.toString();
+    
+    // Create a temporary link and trigger download
+    const link = document.createElement('a');
+    link.href = exportUrl;
+    link.download = 'bookings_export_' + new Date().toISOString().split('T')[0] + '.csv';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// Auto-submit form when certain filters change
+document.addEventListener('DOMContentLoaded', function() {
+    const statusSelect = document.getElementById('status');
+    const roomSelect = document.getElementById('room');
+    
+    // Auto-submit when status or room changes
+    statusSelect.addEventListener('change', function() {
+        if (this.value !== 'all') {
+            document.getElementById('filterForm').submit();
+        }
+    });
+    
+    roomSelect.addEventListener('change', function() {
+        if (this.value !== '') {
+            document.getElementById('filterForm').submit();
+        }
+    });
+    
+    // Add date validation
+    const dateFrom = document.getElementById('date_from');
+    const dateTo = document.getElementById('date_to');
+    
+    dateFrom.addEventListener('change', function() {
+        if (dateTo.value && this.value > dateTo.value) {
+            alert('Check-in date cannot be after check-out date');
+            this.value = '';
+        }
+    });
+    
+    dateTo.addEventListener('change', function() {
+        if (dateFrom.value && this.value < dateFrom.value) {
+            alert('Check-out date cannot be before check-in date');
+            this.value = '';
+        }
+    });
+    
+    // Add amount validation
+    const amountMin = document.getElementById('amount_min');
+    const amountMax = document.getElementById('amount_max');
+    
+    amountMin.addEventListener('change', function() {
+        if (amountMax.value && parseFloat(this.value) > parseFloat(amountMax.value)) {
+            alert('Minimum amount cannot be greater than maximum amount');
+            this.value = '';
+        }
+    });
+    
+    amountMax.addEventListener('change', function() {
+        if (amountMin.value && parseFloat(this.value) < parseFloat(amountMin.value)) {
+            alert('Maximum amount cannot be less than minimum amount');
+            this.value = '';
+        }
+    });
+});
+
+// Add search functionality for guest field
+document.getElementById('guest').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        document.getElementById('filterForm').submit();
+    }
+});
 </script>
 
 <?php include '../includes/admin/footer.php'; ?>
